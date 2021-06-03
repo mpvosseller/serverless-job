@@ -1,0 +1,44 @@
+{
+  "name": "example",
+  "version": "0.1.0",
+  "license": "MIT",
+  "bin": {
+    "example": "bin/example.js"
+  },
+  "scripts": {
+    "tsc": "tsc",
+    "clean": "rm -rf build/",
+    "build": "./build.sh",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@aws-cdk/assert": "^1.106.1",
+    "@aws-cdk/aws-apigatewayv2": "^1.106.1",
+    "@aws-cdk/aws-apigatewayv2-integrations": "^1.106.1",
+    "@aws-cdk/aws-lambda": "^1.106.1",
+    "@aws-cdk/aws-lambda-event-sources": "^1.106.1",
+    "@aws-cdk/aws-sqs": "^1.106.1",
+    "@aws-cdk/core": "^1.106.1",
+    "@types/jest": "^26.0.10",
+    "@types/koa": "^2.13.3",
+    "@types/koa__router": "^8.0.4",
+    "@types/node": "10.17.27",
+    "@types/node-fetch": "^2.5.10",
+    "aws-cdk": "^1.106.1",
+    "aws-lambda": "^1.0.6",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.2.0",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@koa/router": "^10.0.0",
+    "koa": "^2.13.1",
+    "node-fetch": "^2.6.1",
+    "serverless-http": "^2.7.0",
+    "serverless-job": "file:..",
+    "source-map-support": "^0.5.16"
+  }
+}

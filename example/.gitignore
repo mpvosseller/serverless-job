@@ -1,0 +1,5 @@
+build/
+node_modules/
+!jest.config.js
+.cdk.staging
+cdk.out
