@@ -1,5 +1,6 @@
 import { SQSMessageAttributes, SQSRecord, SQSRecordAttributes } from 'aws-lambda'
 import { SQS } from 'aws-sdk'
+import { MessageAttributeValue } from 'aws-sdk/clients/sqs'
 
 export class MessageRecord implements SQSRecord {
   private message: SQS.Message
@@ -8,6 +9,15 @@ export class MessageRecord implements SQSRecord {
   constructor(message: SQS.Message, arn: string) {
     this.message = message
     this.arn = arn
+
+    // convert each SQS.MessageAttributeValue (which uses PascalCase) to an SQSMessageAttribute (which uses camalCase)
+    for (const name in this.messageAttributes) {
+      const attribute = this.messageAttributes[name]
+      const original = attribute as unknown as MessageAttributeValue
+      attribute.stringValue = original.StringValue
+      attribute.binaryValue = original.BinaryValue as string | undefined // XXX when BinaryValue is a Buffer,Uint8Array, or Blob does Lambda convert it to a string?
+      attribute.dataType = original.DataType
+    }
   }
 
   get messageId(): string {

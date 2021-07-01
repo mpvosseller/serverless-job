@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SQS } from 'aws-sdk'
 import { mocked } from 'ts-jest/utils'
 import { createSqsQueue } from './createSqsQueue'
@@ -43,7 +42,7 @@ describe('getQueue()', () => {
     const result = await client.getQueue('myQueue')
 
     expect(createSqsQueueMock).toBeCalledTimes(1)
-    expect(createSqsQueueMock).toBeCalledWith('myQueue')
+    expect(createSqsQueueMock).toBeCalledWith({ client, name: 'myQueue' })
     expect(result).toBe('firstQueue')
   })
 
@@ -57,7 +56,7 @@ describe('getQueue()', () => {
     const secondResult = await client.getQueue('myQueue')
 
     expect(createSqsQueueMock).toBeCalledTimes(1)
-    expect(createSqsQueueMock).toBeCalledWith('myQueue')
+    expect(createSqsQueueMock).toBeCalledWith({ client, name: 'myQueue' })
     expect(firstResult).toBe('firstQueue')
     expect(firstResult).toBe(secondResult)
   })
@@ -74,7 +73,7 @@ describe('getQueue()', () => {
     const result = await client.getQueue()
 
     expect(createSqsQueueMock).toBeCalledTimes(1)
-    expect(createSqsQueueMock).toBeCalledWith('myDefaultQueueName')
+    expect(createSqsQueueMock).toBeCalledWith({ client, name: 'myDefaultQueueName' })
     expect(result).toBe('firstQueue')
   })
 

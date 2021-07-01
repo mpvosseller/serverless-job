@@ -1,28 +1,26 @@
 import { SQS } from 'aws-sdk'
-import { ReceiveMessageRequest } from 'aws-sdk/clients/sqs'
-import { getSqsClient } from './SqsClient'
+import { Queue, ReceiveMessageRequestOptions, SendMessageRequestWithoutQueueUrl } from './Queue'
+import { SqsClient } from './SqsClient'
 
-export type SendMessageRequestWithoutQueueUrl = Omit<SQS.Types.SendMessageRequest, 'QueueUrl'>
-export type ReceiveMessageRequestOptions = Omit<
-  ReceiveMessageRequest,
-  'QueueUrl' | 'AttributeNames' | 'MessageAttributeNames'
->
-
-export class SqsQueue {
+export class SqsQueue implements Queue {
+  private client: SqsClient
   private name: string
   private url: string
   private attributes: SQS.QueueAttributeMap
   private redrivePolicy: Record<string, unknown>
 
   constructor({
+    client,
     name,
     url,
     attributes,
   }: {
+    client: SqsClient
     name: string
     url: string
     attributes: SQS.QueueAttributeMap
   }) {
+    this.client = client
     this.name = name
     this.url = url
     this.attributes = attributes
@@ -58,7 +56,7 @@ export class SqsQueue {
       QueueUrl: this.getUrl(),
       ...message,
     }
-    await getSqsClient().getSqs().sendMessage(request).promise()
+    await this.client.getSqs().sendMessage(request).promise()
   }
 
   async deleteMessage(receiptHandle: string): Promise<void> {
@@ -66,7 +64,7 @@ export class SqsQueue {
       QueueUrl: this.getUrl(),
       ReceiptHandle: receiptHandle,
     }
-    await getSqsClient().getSqs().deleteMessage(request).promise()
+    await this.client.getSqs().deleteMessage(request).promise()
   }
 
   async changeMessageVisibility({
@@ -81,7 +79,7 @@ export class SqsQueue {
       ReceiptHandle: receiptHandle,
       VisibilityTimeout: visibilityTimeout,
     }
-    await getSqsClient().getSqs().changeMessageVisibility(request).promise()
+    await this.client.getSqs().changeMessageVisibility(request).promise()
   }
 
   async receiveMessage(options?: ReceiveMessageRequestOptions): Promise<SQS.ReceiveMessageResult> {
@@ -92,6 +90,14 @@ export class SqsQueue {
       MaxNumberOfMessages: 1,
       ...options,
     }
-    return await getSqsClient().getSqs().receiveMessage(request).promise()
+    return await this.client.getSqs().receiveMessage(request).promise()
+  }
+
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  async purgeQueue(): Promise<{}> {
+    const request = {
+      QueueUrl: this.getUrl(),
+    }
+    return await this.client.getSqs().purgeQueue(request).promise()
   }
 }

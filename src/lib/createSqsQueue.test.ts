@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SQS } from 'aws-sdk'
 import { mocked } from 'ts-jest/utils'
 import { createSqsQueue } from './createSqsQueue'
-import { getSqsClient } from './SqsClient'
+import { SqsClient } from './SqsClient'
 
-jest.mock('./SqsClient')
-const getSqsClientMock = mocked(getSqsClient)
 const SQSMock = mocked(SQS, true)
 const sqsGetQueueUrlMock = SQSMock.prototype.getQueueUrl
 const sqsGetQueueAttributes = SQSMock.prototype.getQueueAttributes
@@ -22,9 +18,7 @@ function setup({
   getQueueUrlResult?: unknown
   getQueueAttributesResult?: unknown
 } = {}) {
-  getSqsClientMock.mockReturnValue({
-    getSqs: () => new SQS(),
-  } as any)
+  const client = new SqsClient()
 
   sqsGetQueueUrlMock.mockReturnValue({
     promise:
@@ -39,10 +33,14 @@ function setup({
         ? jest.fn().mockRejectedValue(getQueueAttributesResult)
         : jest.fn().mockResolvedValue(getQueueAttributesResult),
   } as any)
+
+  return {
+    client,
+  }
 }
 
 test('createQueue() fetches the queue URL and queue attributes and returns a new queue with them', async () => {
-  setup({
+  const { client } = setup({
     getQueueUrlResult: {
       QueueUrl: 'myQueueUrl',
     },
@@ -53,7 +51,7 @@ test('createQueue() fetches the queue URL and queue attributes and returns a new
     },
   })
 
-  const result = await createSqsQueue('myQueueName')
+  const result = await createSqsQueue({ client, name: 'myQueueName' })
 
   expect(sqsGetQueueUrlMock).toBeCalledTimes(1)
   expect(sqsGetQueueUrlMock).toBeCalledWith({
@@ -72,42 +70,42 @@ test('createQueue() fetches the queue URL and queue attributes and returns a new
 })
 
 test('createQueue() rethrows when getQueueUrl() throws', async () => {
-  setup({
+  const { client } = setup({
     getQueueUrlResult: new Error('myError'),
   })
 
-  const result = createSqsQueue('myQueueName')
+  const result = createSqsQueue({ client, name: 'myQueueName' })
 
   await expect(result).rejects.toThrowError('myError')
 })
 
 test('createQueue() rethrows when getQueueAttributes() throws', async () => {
-  setup({
+  const { client } = setup({
     getQueueUrlResult: {
       QueueUrl: 'myQueueUrl',
     },
     getQueueAttributesResult: new Error('myError'),
   })
 
-  const result = createSqsQueue('myQueueName')
+  const result = createSqsQueue({ client, name: 'myQueueName' })
 
   await expect(result).rejects.toThrowError('myError')
 })
 
 test('createQueue() throws when getQueueUrl() result does not have a QueueUrl property', async () => {
-  setup({
+  const { client } = setup({
     getQueueUrlResult: {
       QueueUrlZZZ: {},
     },
   })
 
-  const result = createSqsQueue('myQueueName')
+  const result = createSqsQueue({ client, name: 'myQueueName' })
 
   await expect(result).rejects.toThrowError('failed to get queue url')
 })
 
 test('createQueue() throws when getQueueAttributes() result does not have an Attributes property', async () => {
-  setup({
+  const { client } = setup({
     getQueueUrlResult: {
       QueueUrl: 'myQueueUrl',
     },
@@ -116,7 +114,7 @@ test('createQueue() throws when getQueueAttributes() result does not have an Att
     },
   })
 
-  const result = createSqsQueue('myQueueName')
+  const result = createSqsQueue({ client, name: 'myQueueName' })
 
   await expect(result).rejects.toThrowError('failed to get queue attributes')
 })

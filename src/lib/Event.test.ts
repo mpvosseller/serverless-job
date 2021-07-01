@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Event } from './Event'
 
 type EventBuilderOption =
@@ -8,6 +7,7 @@ type EventBuilderOption =
   | 'records-length-zero'
   | 'receipt-handle-not-string'
   | 'body-not-string'
+  | 'message-attributes-not-present'
   | 'job-attribute-not-present'
   | 'job-attribute-wrong-value'
 
@@ -36,6 +36,9 @@ class EventBuilder {
         break
       case 'body-not-string':
         event.Records[0].body = 13
+        break
+      case 'message-attributes-not-present':
+        delete event.Records[0].messageAttributes
         break
       case 'job-attribute-not-present':
         delete event.Records[0].messageAttributes['serverless-job']
@@ -94,6 +97,11 @@ describe('isJobEvent()', () => {
 
   test('returns false when body is not a string', () => {
     const event = new EventBuilder('body-not-string').build()
+    expect(Event.isJobEvent(event)).toBe(false)
+  })
+
+  test('returns false when messageAttributes are not present', () => {
+    const event = new EventBuilder('message-attributes-not-present').build()
     expect(Event.isJobEvent(event)).toBe(false)
   })
 

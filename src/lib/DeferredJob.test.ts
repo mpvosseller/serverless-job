@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { DeferredJob } from './DeferredJob'
 import { Enqueuer } from './Enqueuer'
 import { BaseJob } from './Job'
@@ -8,11 +6,11 @@ jest.mock('./Enqueuer')
 
 class JobWithOneArg extends BaseJob {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async perform(str: string): Promise<void> {}
+  perform = (arg1: string) => Promise.resolve()
 }
 
 class JobWithZeroArgs extends BaseJob {
-  async perform(): Promise<void> {}
+  perform = () => Promise.resolve()
 }
 
 beforeEach(() => {

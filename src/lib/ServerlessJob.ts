@@ -3,7 +3,6 @@ import { SQS } from 'aws-sdk'
 import { Event } from './Event'
 import { Handler } from './Handler'
 import loadModules from './loadModules'
-import { Poller } from './Poller'
 
 type Config = {
   defaultQueueName?: string
@@ -29,15 +28,19 @@ export class ServerlessJob {
     return this.config
   }
 
+  static getDefaultQueueName(): string {
+    const name = this.getConfig().defaultQueueName
+    if (!name) {
+      throw new Error('failed to find default queue name')
+    }
+    return name
+  }
+
   static isJobEvent(event: unknown): boolean {
     return Event.isJobEvent(event)
   }
 
   static async handleEvent(event: unknown): Promise<unknown> {
     return Handler.handleEvent(event as SQSEvent)
-  }
-
-  static async poll(queueName?: string): Promise<SQSEvent | undefined> {
-    return Poller.poll(queueName)
   }
 }

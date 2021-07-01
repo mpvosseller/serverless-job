@@ -21,6 +21,8 @@ module.exports = {
     {
       files: ['*.test.*', '**/test/**', '**/__mocks__/**'],
       rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/unbound-method': 'off',
         '@typescript-eslint/no-unsafe-assignment': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
       }

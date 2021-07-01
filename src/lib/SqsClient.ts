@@ -1,9 +1,10 @@
 import { SQS } from 'aws-sdk'
 import { createSqsQueue } from './createSqsQueue'
+import { QueueClient } from './Queue'
 import { ServerlessJob } from './ServerlessJob'
 import { SqsQueue } from './SqsQueue'
 
-export class SqsClient {
+export class SqsClient implements QueueClient {
   private sqs: SQS
   private queues: Record<string, SqsQueue | undefined>
 
@@ -17,29 +18,12 @@ export class SqsClient {
   }
 
   async getQueue(name?: string): Promise<SqsQueue> {
-    name = name || this.getDefaultQueueName()
+    name = name || ServerlessJob.getDefaultQueueName()
     let queue = this.queues[name]
     if (!queue) {
-      queue = await createSqsQueue(name)
+      queue = await createSqsQueue({ client: this, name })
       this.queues[name] = queue
     }
     return queue
   }
-
-  private getDefaultQueueName(): string {
-    const name = ServerlessJob.getConfig().defaultQueueName
-    if (!name) {
-      throw new Error('failed to find default queue name')
-    }
-    return name
-  }
-}
-
-let instance: SqsClient | undefined
-
-export function getSqsClient(): SqsClient {
-  if (!instance) {
-    instance = new SqsClient()
-  }
-  return instance
 }

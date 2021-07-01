@@ -24,7 +24,7 @@ export class Event {
 
   private static isJobRecord(record: SQSRecord): boolean {
     return (
-      record.messageAttributes[ServerlessJobAttributeName]?.stringValue ===
+      record.messageAttributes?.[ServerlessJobAttributeName]?.stringValue ===
       ServerlessJobAttributeValue
     )
   }

@@ -1,41 +1,42 @@
 # serverless-job
 
-A framework for declaring and running "jobs" on AWS Lambda using Amazon SQS. It's like Active Job for Node.js on Lambda.
+A framework for declaring and running "jobs" on AWS Lambda using Amazon SQS as
+the queuing backend. It's like Active Job for Lambda.
 
-This may be especially useful to those running something like Express, Koa, or Hapi on Lambda with a package like
-[serverless-http](https://github.com/dougmoscrop/serverless-http) (AKA "monolithic functions"). By using the `serverless-job`
-package your http user event handlers can easily kick off background jobs to be performed later.
-
-This project was inspired directly by the Ruby on Rails [Active Job API](https://guides.rubyonrails.org/active_job_basics.html)
-and the [Lambdakiq](https://github.com/customink/lambdakiq) project.
+I expect this library to be most useful to those running something like Express,
+Koa, or Hapi on Lambda with a package like
+[serverless-http](https://github.com/dougmoscrop/serverless-http) (AKA "monolithic functions").
 
 ## Features
 
 - Simple API for declaring and enqueing jobs
-- Supports multiple queues and FIFO queues
+- Backed by Amazon SQS
+- Supports multiple queues
+- Supports FIFO queues
 - By default each job is attempted at most 13 times with an exponential backoff after each failure
-- Each job type can customize the maxAttempts and backoff algorithm
-- Jobs can be enqueued with a short delay before they will run (up to 15 minutes)
+- Each job type can customize the maximum attempts and backoff algorithm
+- Jobs can be enqueued with a short delay (up to 15 minutes) before they are added to the queue
+- Local development is supported with a built-in event poller
 
-## Basic API
+## Example API Usage with TypeScript
 
 ```typescript
 // MyJob.ts
 import { BaseJob, Job } from 'serverless-job'
 
-@Job() // use the @Job() decorator and extend BaseJob
+@Job() // define a Job by extending BaseJob and using the @Job decorator
 export class MyJob extends BaseJob {
-  // implement job logic in an async perform() method. can take any arguments but must all be serializable to JSON
+  // implement job logic in an async perform() method. It may take any number of arguments but each must be serializable to JSON
   async perform(arg1: string, arg2: number): Promise<void> {
-    // job logic
+    // ...
   }
 
-  // optionally override maxAttempts for this job type. default is 13
+  // optionally implement a static maxAttempts() method to define maximum attempts of this job
   static maxAttempts(): number {
     return 3
   }
 
-  // optionally override the time to wait between attempt and attempt+1. Default is an exponenial backoff.
+  // optionally implement a static getBackoff() method to define the wait time between attempt n and attempt n+1
   static getBackoff(attempt: number): number {
     return 300 // 5 minutes
   }
@@ -51,38 +52,69 @@ ServerlessJob.configure({
   defaultQueueName: process.env.JOB_QUEUE_NAME, // name of the default queue
   jobs: 'jobs/**/*.js', // path pattern to your job modules
   maxAttempts: 13, // max attempts per job
-  sqs: { // aws sqs configuration
-     region: 'us-east-1'
-  }
+  sqs: {
+    // any aws sqs configuration you may need
+    region: 'us-east-1',
+  },
 })
 
+// lambda handler
 export async function handler(event: any, context: Context): Promise<unknown> {
   if (ServerlessJob.isJobEvent(event)) {
-    // handle background jobs
-    return ServerlessJob.handleEvent(event)
+    return ServerlessJob.handleEvent(event) // handles all job events
+  } else {
+    // handle all other lambda events
+    // if using serverless-http call it's handler here
   }
-  // handle other lambda requests
-  if (...) {
-      // add a background job to the default queue
-      await MyJob.performLater('someStr', 42)
+}
 
-      // add a background job to a secondary queue with a 5 minute delay before it can run
-      await MyJob.set({
-        queueName: 'someOtherQueueName',
-        delaySeconds: 300,
-      }).performLater()
+// example function that kicks of background jobs
+async function startBackgroundJobs() {
+  // adds a background job to the default queue
+  await MyJob.performLater('someArg1', 1)
 
-      // add a background job to a FIFO queue
-      await MyJob.set({
-        queueName: 'someQueue.fifo',
-        deduplicationId: 'someDeduplicationId',
-        groupId: 'someGroupId',
-      }).performLater()
-  }
+  // adds a background job to a secondary queue with a 5 minute delay before it can run
+  await MyJob.set({
+    queueName: 'someOtherQueueName',
+    delaySeconds: 300,
+  }).performLater('someArg2', 2)
+
+  // add a background job to a FIFO queue with a deduplicationId and groupId
+  await MyJob.set({
+    queueName: 'someQueue.fifo',
+    deduplicationId: 'someDeduplicationId',
+    groupId: 'someGroupId',
+  }).performLater('someArg3', 3)
 }
 ```
 
-## Setup
+## AWS Setup
+
+To use `serverless-job` in production you will need to configure at least one AWS
+Lambda function and at least one Amazon SQS queue in your AWS environment.
+
+There are many ways you can setup your AWS environment:
+
+- Manually in the [AWS Management Console](https://aws.amazon.com/console)
+- [AWS CloudFormation](https://aws.amazon.com/cloudformation)
+- [AWS SAM](https://aws.amazon.com/serverless/sam)
+- [The Serverless Framework](https://www.serverless.com)
+- [AWS CDK](https://aws.amazon.com/cdk)
+
+However you set up your environment the most important considerations are:
+
+- The `timeout` of your Lambda function must be long enough to process one job
+- The `visibilityTimeout` of your queues should be greater than the Lambda function's timeout
+- You must provide the name of your default queue to your Lambda function. Usually this is done with an environment variable like `JOB_QUEUE_NAME`
+- You must grant the Lambda functions permission to use the queues
+- You must configure your queues as event sources for your Lambda with a `batchSize` = 1
+
+NOTE: Depending on your needs you may want to configure multiple Lambda functions.
+For example, it is common to configure one Lambda function for handling HTTP user
+events and another for handling the jobs. This allows you to set a much shorter
+timeout period for the former.
+
+Below is a sample configuration (with a single Lambda function) using the AWS CDK.
 
 ### AWS CDK
 
@@ -123,3 +155,46 @@ lambdaFn.addEventSource(
   })
 )
 ```
+
+## Local Development
+
+`serverless-job` supports developing and running your application locally.
+
+When developing locally you do not need to configure a Lambda function. You do
+still need to configure one or more SQS Queues and will need a network connection.
+Offline development is not supported.
+
+The main difference when running locally is that we can't depend on the direct
+Lambda/SQS integration for event delivery. Instead when running locally you must
+poll for events from each queue. You can do this by creating a `Poller` object for
+each SQS Queue you are using.
+
+```typescript
+// begin polling the default queue. Each event is sent directly to ServerlessJob.handleEvent(event)
+new Poller({
+  purgeOnStart: true, // optional: delete all events in the queue before polling starts. This can be useful in development to start with a clean slate
+})
+
+// begin polling a secondary queue
+new Poller({
+  queueName: 'otherQueue',
+})
+
+// begin polling on the default queue with a custom handler
+new Poller({
+  handler: (event: SQSEvent) => myCustomHandler(event), // events are sent to myCustomHandler(event) instead of ServerlessJob.handleEvent(event)
+})
+```
+
+NOTE: Be sure to create and use distinct queues for local development. If your
+local application uses the same queue as a deployed Lambda you can not be certain
+which one will process an event published by either.
+
+## Acknowledgements
+
+This project was inspired directly by the Ruby on Rails [Active Job API](https://guides.rubyonrails.org/active_job_basics.html)
+and the [Lambdakiq](https://github.com/customink/lambdakiq) project.
+
+Special thanks to [Ken Collins](https://github.com/metaskills), the primary developer of the [Lambdakiq](https://github.com/customink/lambdakiq)
+project. Most of what I know about SQS was learned by reading his
+code and this project is largely just a port of that project to Node.js.

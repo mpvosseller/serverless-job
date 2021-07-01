@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SQS } from 'aws-sdk'
 import { mocked } from 'ts-jest/utils'
-import { getSqsClient } from './SqsClient'
+import { SqsClient } from './SqsClient'
 import { SqsQueue } from './SqsQueue'
 
-jest.mock('./SqsClient')
-const getSqsClientMock = mocked(getSqsClient)
 const SQSMock = mocked(SQS, true)
 const sqsSendMessageMock = SQSMock.prototype.sendMessage
 const sqsDeleteMessageMock = SQSMock.prototype.deleteMessage
@@ -30,9 +26,7 @@ function setup({
   maxReceiveCount?: number
   receiveMessageResult?: unknown
 } = {}) {
-  getSqsClientMock.mockReturnValue({
-    getSqs: () => new SQS(),
-  } as any)
+  const client = new SqsClient()
 
   sqsSendMessageMock.mockReturnValue({
     promise: jest.fn(),
@@ -58,6 +52,7 @@ function setup({
   } as SQS.QueueAttributeMap
 
   const queue = new SqsQueue({
+    client,
     name,
     url,
     attributes,

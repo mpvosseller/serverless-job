@@ -1,8 +1,8 @@
 import { SQS } from 'aws-sdk'
 import { DeferredJob } from './DeferredJob'
 import { JobSerializer } from './JobSerializer'
+import { SendMessageRequestWithoutQueueUrl } from './Queue'
 import { SerializableJob } from './SerializableJob'
-import { SendMessageRequestWithoutQueueUrl } from './SqsQueue'
 
 export const ServerlessJobAttributeName = 'serverless-job'
 export const ServerlessJobAttributeValue = '1'

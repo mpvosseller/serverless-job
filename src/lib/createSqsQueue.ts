@@ -1,15 +1,21 @@
 import { SQS } from 'aws-sdk'
-import { getSqsClient } from './SqsClient'
+import { SqsClient } from './SqsClient'
 import { SqsQueue } from './SqsQueue'
 
-export async function createSqsQueue(name: string): Promise<SqsQueue> {
-  const url = await getQueueUrl(name)
-  const attributes = await getQueueAttributes(url)
-  return new SqsQueue({ name, url, attributes })
+export async function createSqsQueue({
+  client,
+  name,
+}: {
+  client: SqsClient
+  name: string
+}): Promise<SqsQueue> {
+  const url = await getQueueUrl({ client, name })
+  const attributes = await getQueueAttributes({ client, url })
+  return new SqsQueue({ client, name, url, attributes })
 }
 
-async function getQueueUrl(name: string): Promise<string> {
-  const result = await getSqsClient()
+async function getQueueUrl({ client, name }: { client: SqsClient; name: string }): Promise<string> {
+  const result = await client
     .getSqs()
     .getQueueUrl({
       QueueName: name,
@@ -22,8 +28,14 @@ async function getQueueUrl(name: string): Promise<string> {
   return url
 }
 
-async function getQueueAttributes(url: string): Promise<SQS.QueueAttributeMap> {
-  const result = await getSqsClient()
+async function getQueueAttributes({
+  client,
+  url,
+}: {
+  client: SqsClient
+  url: string
+}): Promise<SQS.QueueAttributeMap> {
+  const result = await client
     .getSqs()
     .getQueueAttributes({
       QueueUrl: url,

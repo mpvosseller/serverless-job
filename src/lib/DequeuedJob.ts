@@ -2,9 +2,8 @@ import { SQSRecord } from 'aws-lambda'
 import { BaseJob } from './Job'
 import { JobRecord } from './JobRecord'
 import { JobSerializer } from './JobSerializer'
+import { getQueueClient, Queue } from './Queue'
 import { SerializableJob } from './SerializableJob'
-import { getSqsClient } from './SqsClient'
-import { SqsQueue } from './SqsQueue'
 
 export type DequeuedJobResult = {
   error?: unknown
@@ -63,7 +62,7 @@ export class DequeuedJob {
     }
   }
 
-  private async getQueue(): Promise<SqsQueue> {
-    return getSqsClient().getQueue(this.record.queueName)
+  private async getQueue(): Promise<Queue> {
+    return getQueueClient().getQueue(this.record.queueName)
   }
 }

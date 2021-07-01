@@ -6,8 +6,7 @@ import { Options } from './Options'
 import { Registry } from './Registry'
 
 class SomeJob extends BaseJob {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  async perform(): Promise<void> {}
+  perform = () => Promise.resolve()
 }
 
 beforeEach(() => {

@@ -4,8 +4,8 @@ import { Registry } from './Registry'
 import { SerializableJob } from './SerializableJob'
 
 class SomeJob extends BaseJob {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-  async perform(str: string): Promise<void> {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  perform = (str: string) => Promise.resolve()
 }
 
 beforeEach(() => {
