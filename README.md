@@ -180,7 +180,7 @@ Note that `maxReceiveCount` (of the redrive policy) supersedes `maxAttempts`
 - when `maxReceiveCount` < `maxAttempts` - a failed job will be sent to the dead-letter queue and will only be attempted `maxReceiveCount` times
 - when `maxReceiveCount` >= `maxAttempts` - a failed job will be deleted after `maxAttempts` and will not be sent to the dead-letter queue
 
-Sending failed job to the dead-letter queue when `maxReceiveCount` >= `maxAttempts` is not supported.
+Sending failed jobs to the dead-letter queue when `maxReceiveCount` >= `maxAttempts` is not supported.
 
 ## Local Development
 
