@@ -157,7 +157,16 @@ lambdaFn.addEventSource(
 )
 ```
 
-## Dead-letter queues
+## SQS Message Retention Period
+
+Each SQS Queue has a `MessageRetentionPeriod` associated with it. The default
+value is 4 days but it can be configured between 1 minute and 14 days.
+
+If a job remains in the queue for longer than the `MessageRetentionPeriod` it
+will be deleted. It will be deleted even if the Job's `maxAttempts` has not
+yet been reached.
+
+## SQS Dead-letter Queues
 
 You may optionally configure your SQS Queue to use a [dead-letter queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html).
 
