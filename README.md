@@ -16,6 +16,7 @@ Koa, or Hapi on Lambda with a package like
 - By default each job is attempted at most 13 times with an exponential backoff after each failure
 - Each job type can customize the maximum attempts and backoff algorithm
 - Jobs can be enqueued with a short delay (up to 15 minutes) before they are added to the queue
+- Supports dead-letter queues
 - Local development is supported with a built-in event poller
 
 ## Example API Usage with TypeScript
@@ -155,6 +156,22 @@ lambdaFn.addEventSource(
   })
 )
 ```
+
+## Dead-letter queues
+
+You may optionally configure your SQS Queue to use a [dead-letter queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html).
+
+Once configured any Job on the respective queue will be forwarded to the
+dead-letter queue after it has been attempted `maxReceiveCount` (of the
+redrive policy) times.
+
+Note that `maxReceiveCount` (of the redrive policy) supersedes `maxAttempts`
+(of the Job). This means that:
+
+- when `maxReceiveCount` < `maxAttempts` - a failed job will be sent to the dead-letter queue and will only be attempted `maxReceiveCount` times
+- when `maxReceiveCount` >= `maxAttempts` - a failed job will be deleted after `maxAttempts` and will not be sent to the dead-letter queue
+
+Sending failed job to the dead-letter queue when `maxReceiveCount` >= `maxAttempts` is not supported.
 
 ## Local Development
 
