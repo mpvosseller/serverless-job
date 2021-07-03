@@ -49,7 +49,16 @@ export class Poller {
   private async run(): Promise<void> {
     if (this.purgeOnStart) {
       console.log(`purging queue ${this.queueName}`)
-      await Poller.purge(this.queueName)
+      try {
+        await Poller.purge(this.queueName)
+      } catch (e: unknown) {
+        const error = e as Error
+        if (error.name === 'AWS.SimpleQueueService.PurgeQueueInProgress') {
+          console.log('purge is already in progress')
+        } else {
+          throw error
+        }
+      }
     }
 
     console.log(`polling queue ${this.queueName}`)
