@@ -9,6 +9,7 @@ type Config = {
   jobs?: string
   maxAttempts?: number
   sqs?: SQS.Types.ClientConfiguration
+  debug?: boolean
 }
 
 export class ServerlessJob {

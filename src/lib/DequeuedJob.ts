@@ -4,6 +4,7 @@ import { JobRecord } from './JobRecord'
 import { JobSerializer } from './JobSerializer'
 import { getQueueClient, Queue } from './Queue'
 import { SerializableJob } from './SerializableJob'
+import { ServerlessJob } from './ServerlessJob'
 
 export type DequeuedJobResult = {
   error?: unknown
@@ -25,12 +26,19 @@ export class DequeuedJob {
       await job.perform()
       await this.deleteMessage()
     } catch (e: unknown) {
+      console.error(JSON.stringify(e))
       const jobClass = (job?.clazz || BaseJob) as typeof BaseJob
       const maxAttempts = jobClass.maxAttempts()
       const nextVisibilityTimeout = jobClass.getBackoff(this.record.receiveCount)
       if (this.record.receiveCount >= maxAttempts) {
+        if (ServerlessJob.getConfig().debug) {
+          console.log('deleting job: maxAttempts reached')
+        }
         await this.deleteMessage() // retry_stopped
       } else {
+        if (ServerlessJob.getConfig().debug) {
+          console.log(`retrying job in ${nextVisibilityTimeout} seconds`)
+        }
         await this.updateMessageVisibility(nextVisibilityTimeout) // enqueue_retry
         error = e
       }
