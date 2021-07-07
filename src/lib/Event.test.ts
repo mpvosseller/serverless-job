@@ -10,6 +10,9 @@ type EventBuilderOption =
   | 'message-attributes-not-present'
   | 'job-attribute-not-present'
   | 'job-attribute-wrong-value'
+  | 'attribute-in-body'
+  | 'attribute-in-body-wrong-value'
+  | 'attribute-not-in-body'
 
 class EventBuilder {
   private option: EventBuilderOption
@@ -45,6 +48,28 @@ class EventBuilder {
         break
       case 'job-attribute-wrong-value':
         event.Records[0].messageAttributes['serverless-job'].stringValue = 13
+        break
+      case 'attribute-in-body':
+        delete event.Records[0].messageAttributes['serverless-job']
+        event.Records[0].body = JSON.stringify({
+          messageAttributes: {
+            'serverless-job': '1',
+          },
+        })
+        break
+      case 'attribute-in-body-wrong-value':
+        delete event.Records[0].messageAttributes['serverless-job']
+        event.Records[0].body = JSON.stringify({
+          messageAttributes: {
+            'serverless-job': 13,
+          },
+        })
+        break
+      case 'attribute-not-in-body':
+        delete event.Records[0].messageAttributes['serverless-job']
+        event.Records[0].body = JSON.stringify({
+          messageAttributes: {},
+        })
         break
     }
 
@@ -112,6 +137,21 @@ describe('isJobEvent()', () => {
 
   test('returns false when job attribute has wrong value', () => {
     const event = new EventBuilder('job-attribute-wrong-value').build()
+    expect(Event.isJobEvent(event)).toBe(false)
+  })
+
+  test('returns true when attribute is in the body with correct value', () => {
+    const event = new EventBuilder('attribute-in-body').build()
+    expect(Event.isJobEvent(event)).toBe(true)
+  })
+
+  test('returns true when attribute is in the body with correct value', () => {
+    const event = new EventBuilder('attribute-in-body-wrong-value').build()
+    expect(Event.isJobEvent(event)).toBe(false)
+  })
+
+  test('returns true when attribute is in the body with correct value', () => {
+    const event = new EventBuilder('attribute-not-in-body').build()
     expect(Event.isJobEvent(event)).toBe(false)
   })
 })

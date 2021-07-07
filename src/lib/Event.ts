@@ -23,9 +23,25 @@ export class Event {
   }
 
   private static isJobRecord(record: SQSRecord): boolean {
-    return (
+    // check messageAttributes
+    if (
       record.messageAttributes?.[ServerlessJobAttributeName]?.stringValue ===
       ServerlessJobAttributeValue
-    )
+    ) {
+      return true
+    }
+
+    // some services may not support inclusion of messageAttributes (e.g. EventBridge doesn't support passing this field)
+    // to support things like Scheduled Events we also we look for a top level messageAttributes field in the body
+    try {
+      const body = JSON.parse(record.body) as { messageAttributes?: Record<string, unknown> }
+      if (body.messageAttributes?.[ServerlessJobAttributeName] === ServerlessJobAttributeValue) {
+        return true
+      }
+    } catch (e: unknown) {
+      // body is not json so ignore
+    }
+
+    return false
   }
 }
