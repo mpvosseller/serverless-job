@@ -12,7 +12,7 @@ export interface Queue {
   getName(): string
   getArn(): string
   isFifo(): boolean
-  sendMessage(message: SendMessageRequestWithoutQueueUrl): Promise<void>
+  sendMessage(message: SendMessageRequestWithoutQueueUrl): Promise<SQS.SendMessageResult>
   deleteMessage(receiptHandle: string): Promise<void>
   changeMessageVisibility({
     receiptHandle,

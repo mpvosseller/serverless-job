@@ -51,12 +51,12 @@ export class SqsQueue implements Queue {
     return parseInt(this.redrivePolicy.maxReceiveCount as string)
   }
 
-  async sendMessage(message: SendMessageRequestWithoutQueueUrl): Promise<void> {
+  async sendMessage(message: SendMessageRequestWithoutQueueUrl): Promise<SQS.SendMessageResult> {
     const request = {
       QueueUrl: this.getUrl(),
       ...message,
     }
-    await this.client.getSqs().sendMessage(request).promise()
+    return this.client.getSqs().sendMessage(request).promise()
   }
 
   async deleteMessage(receiptHandle: string): Promise<void> {
