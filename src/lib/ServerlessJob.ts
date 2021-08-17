@@ -1,5 +1,6 @@
 import { SQSEvent } from 'aws-lambda'
 import { SQS } from 'aws-sdk'
+import { Logger } from './CloudWatchMetricLogger'
 import { Event } from './Event'
 import { Handler } from './Handler'
 import loadModules from './loadModules'
@@ -7,16 +8,29 @@ import loadModules from './loadModules'
 type Config = {
   defaultQueueName?: string
   jobs?: string
-  maxAttempts?: number
+  maxAttempts: number
   sqs?: SQS.Types.ClientConfiguration
   debug?: boolean
+  metricsAppName: string
+  metricsNameSpace: string
+  metricsLogger: Logger
+}
+
+const defaultConfig: Config = {
+  maxAttempts: 13,
+  metricsAppName: 'Unknown',
+  metricsNameSpace: 'Serverless-Job',
+  metricsLogger: console,
 }
 
 export class ServerlessJob {
-  private static config: Config = {}
+  private static config = defaultConfig
 
-  static configure(config: Config): void {
-    this.config = config
+  static configure(config: Partial<Config>): void {
+    this.config = {
+      ...defaultConfig,
+      ...config,
+    }
 
     // load all job modules to ensure each gets registered via their @Job() annotation
     const jobsPattern = config.jobs

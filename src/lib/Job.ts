@@ -37,7 +37,7 @@ export abstract class BaseJob {
   }
 
   static maxAttempts(): number {
-    return ServerlessJob.getConfig().maxAttempts || 13
+    return ServerlessJob.getConfig().maxAttempts
   }
 
   static getBackoff(attempt: number): number {
