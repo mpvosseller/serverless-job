@@ -1,4 +1,5 @@
 import { SQSRecord } from 'aws-lambda'
+import { CloudWatchMetricLogger } from './CloudWatchMetricLogger'
 import { BaseJob } from './Job'
 import { JobRecord } from './JobRecord'
 import { JobSerializer } from './JobSerializer'
@@ -23,7 +24,7 @@ export class DequeuedJob {
 
     try {
       job = JobSerializer.deserialize(this.record.body)
-      await job.perform()
+      await this.performJob({ job, jobRecord: this.record })
       await this.deleteMessage()
     } catch (e: unknown) {
       console.error(JSON.stringify(e))
@@ -34,18 +35,63 @@ export class DequeuedJob {
         if (ServerlessJob.getConfig().debug) {
           console.log('deleting job: maxAttempts reached')
         }
-        await this.deleteMessage() // retry_stopped
+        await this.deleteMessage()
+        CloudWatchMetricLogger.logEvent({
+          name: 'retry_stopped',
+          job,
+          jobRecord: this.record,
+          error: e as Error,
+        })
       } else {
         if (ServerlessJob.getConfig().debug) {
           console.log(`retrying job in ${nextVisibilityTimeout} seconds`)
         }
-        await this.updateMessageVisibility(nextVisibilityTimeout) // enqueue_retry
+        await this.updateMessageVisibility(nextVisibilityTimeout)
         error = e
+        CloudWatchMetricLogger.logEvent({
+          name: 'enqueue_retry',
+          job,
+          jobRecord: this.record,
+          error: e as Error,
+          nextVisibilityTimeout,
+        })
       }
     }
 
     return {
       error,
+    }
+  }
+
+  private async performJob({
+    job,
+    jobRecord,
+  }: {
+    job: SerializableJob
+    jobRecord: JobRecord
+  }): Promise<void> {
+    CloudWatchMetricLogger.logEvent({
+      name: 'perform_start',
+      job,
+      jobRecord,
+    })
+    const performStart = Date.now()
+    let error: unknown = undefined
+    try {
+      await job.perform()
+    } catch (e: unknown) {
+      error = e
+      throw e
+    } finally {
+      const performEnd = Date.now()
+      const duration = performEnd - performStart
+      CloudWatchMetricLogger.logEvent({
+        name: 'perform',
+        job,
+        jobRecord,
+        error: error as Error,
+        duration,
+      })
     }
   }
 

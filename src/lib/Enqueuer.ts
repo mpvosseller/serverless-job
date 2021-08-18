@@ -1,3 +1,4 @@
+import { CloudWatchMetricLogger } from './CloudWatchMetricLogger'
 import { DeferredJob } from './DeferredJob'
 import { MessageBuilder } from './MessageBuilder'
 import { getQueueClient } from './Queue'
@@ -10,6 +11,13 @@ export class Enqueuer {
       args,
       isFifo: queue.isFifo(),
     }).build()
-    await queue.sendMessage(message)
+    const sendMessageResult = await queue.sendMessage(message)
+    CloudWatchMetricLogger.logEvent({
+      name: 'enqueue',
+      deferredJob: job,
+      args,
+      queue,
+      sendMessageResult,
+    })
   }
 }
