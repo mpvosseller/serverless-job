@@ -17,6 +17,7 @@ Koa, or Hapi on Lambda with a package like
 - Each job type can customize the maximum attempts and backoff algorithm
 - Jobs can be enqueued with a short delay (up to 15 minutes) before they are added to the queue
 - Supports dead-letter queues
+- Observability with CloudWatch Metrics
 - Local development is supported with a built-in event poller
 
 ## Example API Usage with TypeScript
@@ -50,6 +51,7 @@ import { Context } from 'aws-lambda'
 import { ServerlessJob } from 'serverless-job'
 
 ServerlessJob.configure({
+  metricsAppName: 'MyAppName', // name of your application
   defaultQueueName: process.env.JOB_QUEUE_NAME, // name of the default queue
   jobs: 'jobs/**/*.js', // path pattern to your job modules
   maxAttempts: 13, // max attempts per job
@@ -69,7 +71,7 @@ export async function handler(event: any, context: Context): Promise<unknown> {
   }
 }
 
-// example function that kicks of background jobs
+// example function that kicks off background jobs
 async function startBackgroundJobs() {
   // adds a background job to the default queue
   await MyJob.performLater('someArg1', 1)
@@ -181,6 +183,37 @@ Note that `maxReceiveCount` (of the redrive policy) supersedes `maxAttempts`
 - when `maxReceiveCount` >= `maxAttempts` - a failed job will be deleted after `maxAttempts` and will not be sent to the dead-letter queue
 
 Sending failed jobs to the dead-letter queue when `maxReceiveCount` >= `maxAttempts` is not supported.
+
+## Amazon CloudWatch Metrics
+
+Metrics related to your jobs are published with [Amazon CloudWatch Metrics](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/working_with_metrics.html) under the `Serverless-Job` namespace. You can use CloudWatch to monitor, graph, and alert on these metrics.
+
+### Metric Dimensions
+
+- `AppName` - The name of your app (configured with `metricsAppName`)
+- `JobEvent` - The name of the job event (see below)
+- `JobName` - The name of the job
+
+### Job Events
+
+- `enqueue` - Job has been enqueued
+- `perform_start` - Job is about to be run
+- `perform` - Job has completed running (may or may not have completed successfully)
+- `enqueue_retry` - Job has been re-enqueued because of a failue
+- `retry_stopped` - Job has been deleted because `maxAttempts` have been reached
+
+### Job Properties
+
+Job properties can not be graphed but you can search and view them in CloudWatch Logs and CloudWatch Logs Insights.
+
+- `QueueName` - Name of the SQS queue
+- `MessageId` - SQS message id
+- `ErrorType` - When a job fails this holds the class name of the Error object
+- `Error` - When a job fails this holds the serialized error
+- `EnqueuedAt` - Time when the job was originally enqueued
+- `Executions` - Number of executions (run attempts) of this job instance
+- `JobArgs` - Arguments for this job
+- `NextVisibilityTimeout` - indicates how long to wait until the job will be retried (included in `enqueue_retry` events only)
 
 ## Local Development
 
