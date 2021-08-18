@@ -1,6 +1,6 @@
 {
   "name": "serverless-job",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": "Michael Vosseller",
   "license": "MIT",
   "description": "A framework for declaring and running jobs in Node.js on AWS Lambda with Amazon SQS.",
