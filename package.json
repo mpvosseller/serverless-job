@@ -57,6 +57,7 @@
     "aws-sdk": "^2.906.0"
   },
   "dependencies": {
+    "aws-xray-sdk": "^3.3.3",
     "glob": "^7.1.7",
     "serialize-error": "^8.1.0"
   }

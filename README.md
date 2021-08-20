@@ -18,6 +18,7 @@ Koa, or Hapi on Lambda with a package like
 - Jobs can be enqueued with a short delay (up to 15 minutes) before they are added to the queue
 - Supports dead-letter queues
 - Observability with CloudWatch Metrics
+- AWS X-Ray tracing support
 - Local development is supported with a built-in event poller
 
 ## Example API Usage with TypeScript
@@ -214,6 +215,16 @@ Job properties can not be graphed but you can search and view them in CloudWatch
 - `Executions` - Number of executions (run attempts) of this job instance
 - `JobArgs` - Arguments for this job
 - `NextVisibilityTimeout` - indicates how long to wait until the job will be retried (included in `enqueue_retry` events only)
+
+## AWS X-Ray Tracing
+
+You can enable AWS X-Ray tracing on calls to SQS by setting the `xRayTracing` configuration option to `true`. It is disabled by default.
+
+```
+ServerlessJob.configure({
+  xRayTracing: true
+})
+```
 
 ## Local Development
 

@@ -1,4 +1,5 @@
 import { SQS } from 'aws-sdk'
+import AWSXRay from 'aws-xray-sdk'
 import { createSqsQueue } from './createSqsQueue'
 import { QueueClient } from './Queue'
 import { ServerlessJob } from './ServerlessJob'
@@ -9,7 +10,11 @@ export class SqsClient implements QueueClient {
   private queues: Record<string, SqsQueue | undefined>
 
   constructor() {
-    this.sqs = new SQS(ServerlessJob.getConfig().sqs)
+    let sqsClient = new SQS(ServerlessJob.getConfig().sqs)
+    if (ServerlessJob.getConfig().xRayTracing) {
+      sqsClient = AWSXRay.captureAWSClient(sqsClient)
+    }
+    this.sqs = sqsClient
     this.queues = {}
   }
 

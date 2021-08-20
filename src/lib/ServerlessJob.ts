@@ -10,6 +10,7 @@ type Config = {
   jobs?: string
   maxAttempts: number
   sqs?: SQS.Types.ClientConfiguration
+  xRayTracing?: boolean
   debug?: boolean
   metricsAppName: string
   metricsNameSpace: string
